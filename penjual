@@ -1,0 +1,68 @@
+-- ============================================
+-- 02. TABEL PENJUAL
+-- UMKM Kopi Keliling - SQL Server 2008+
+-- ============================================
+
+USE UMKM_KopiKeliling;
+GO
+
+-- Buat Tabel Penjual
+CREATE TABLE Penjual (
+    id_penjual INT PRIMARY KEY,
+    nama_penjual NVARCHAR(100) NOT NULL
+);
+GO
+
+-- Insert 68 Penjual dengan nama realistis Indonesia
+DECLARE @i INT = 1;
+DECLARE @nama_depan TABLE (id INT, nama NVARCHAR(50));
+INSERT INTO @nama_depan VALUES
+(1,'Ahmad'),(2,'Budi'),(3,'Cahyo'),(4,'Dedi'),(5,'Eko'),
+(6,'Fajar'),(7,'Gunawan'),(8,'Hadi'),(9,'Irwan'),(10,'Joko'),
+(11,'Kurniawan'),(12,'Lukman'),(13,'Mulyadi'),(14,'Nanda'),(15,'Oki'),
+(16,'Prasetyo'),(17,'Qomar'),(18,'Rizki'),(19,'Surya'),(20,'Taufik'),
+(21,'Umar'),(22,'Vino'),(23,'Wahyu'),(24,'Yanto'),(25,'Zainal'),
+(26,'Agus'),(27,'Bambang'),(28,'Candra'),(29,'Dimas'),(30,'Endang'),
+(31,'Feri'),(32,'Gilang'),(33,'Hendra'),(34,'Imam'),(35,'Joni'),
+(36,'Krisna'),(37,'Lutfi'),(38,'Maman'),(39,'Naufal'),(40,'Oscar'),
+(41,'Putra'),(42,'Rafi'),(43,'Slamet'),(44,'Teguh'),(45,'Ujang'),
+(46,'Veri'),(47,'Wawan'),(48,'Yudi'),(49,'Zaki'),(50,'Arif'),
+(51,'Bagas'),(52,'Chandra'),(53,'Dwi'),(54,'Erwin'),(55,'Firman'),
+(56,'Galih'),(57,'Hasan'),(58,'Ilham'),(59,'Jefri'),(60,'Khoirul'),
+(61,'Luthfi'),(62,'Mahendra'),(63,'Nur'),(64,'Okta'),(65,'Pandu'),
+(66,'Rendi'),(67,'Sigit'),(68,'Tri');
+
+DECLARE @nama_belakang TABLE (id INT, nama NVARCHAR(50));
+INSERT INTO @nama_belakang VALUES
+(1,'Hidayat'),(2,'Saputra'),(3,'Pratama'),(4,'Nugroho'),(5,'Santoso'),
+(6,'Wijaya'),(7,'Setiawan'),(8,'Kusuma'),(9,'Ramadhan'),(10,'Firmansyah'),
+(11,'Hakim'),(12,'Maulana'),(13,'Syahputra'),(14,'Wibowo'),(15,'Suryadi'),
+(16,'Permana'),(17,'Anggara'),(18,'Fadillah');
+
+SET @i = 1;
+WHILE @i <= 68
+BEGIN
+    DECLARE @namaDepan NVARCHAR(50);
+    DECLARE @namaBelakang NVARCHAR(50);
+    
+    SELECT @namaDepan = nama FROM @nama_depan WHERE id = @i;
+    
+    -- Pilih nama belakang random
+    SELECT TOP 1 @namaBelakang = nama 
+    FROM @nama_belakang 
+    ORDER BY ABS(CHECKSUM(NEWID())) % 18;
+    
+    INSERT INTO Penjual (id_penjual, nama_penjual)
+    VALUES (@i, @namaDepan + ' ' + @namaBelakang);
+    
+    SET @i = @i + 1;
+END
+GO
+
+-- Verifikasi
+SELECT 'Jumlah Penjual' AS Keterangan, COUNT(*) AS Total FROM Penjual;
+SELECT TOP 10 * FROM Penjual ORDER BY id_penjual;
+GO
+
+PRINT 'Tabel Penjual berhasil dibuat dan diisi 68 data!';
+GO
