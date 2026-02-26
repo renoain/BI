@@ -1,0 +1,379 @@
+-- ============================================
+-- SCRIPT SQL SERVER 2008: UMKM KOPI KELILING
+-- Database: Sistem Manajemen Penjualan Kopi Keliling
+-- Kompatibel dengan SQL Server 2008+
+-- ============================================
+
+-- Buat Database
+IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'UMKM_KopiKeliling')
+BEGIN
+    CREATE DATABASE UMKM_KopiKeliling;
+END
+GO
+
+USE UMKM_KopiKeliling;
+GO
+
+-- ============================================
+-- DROP TABEL JIKA SUDAH ADA (urutan sesuai dependensi)
+-- ============================================
+IF OBJECT_ID('DetailPembayaran', 'U') IS NOT NULL DROP TABLE DetailPembayaran;
+IF OBJECT_ID('Transaksi', 'U') IS NOT NULL DROP TABLE Transaksi;
+IF OBJECT_ID('Produk', 'U') IS NOT NULL DROP TABLE Produk;
+IF OBJECT_ID('Gerobak', 'U') IS NOT NULL DROP TABLE Gerobak;
+IF OBJECT_ID('Penjual', 'U') IS NOT NULL DROP TABLE Penjual;
+GO
+
+-- ============================================
+-- 1. TABEL PENJUAL
+-- ============================================
+CREATE TABLE Penjual (
+    id_penjual INT PRIMARY KEY,
+    nama_penjual NVARCHAR(100) NOT NULL
+);
+GO
+
+-- ============================================
+-- 2. TABEL GEROBAK
+-- ============================================
+CREATE TABLE Gerobak (
+    id_gerobak INT PRIMARY KEY,
+    id_penjual INT NOT NULL,
+    CONSTRAINT FK_Gerobak_Penjual FOREIGN KEY (id_penjual) 
+        REFERENCES Penjual(id_penjual)
+);
+GO
+
+-- ============================================
+-- 3. TABEL PRODUK
+-- ============================================
+CREATE TABLE Produk (
+    id_produk INT PRIMARY KEY,
+    nama_produk NVARCHAR(100) NOT NULL,
+    kategori NVARCHAR(50) NOT NULL,
+    harga INT NOT NULL
+);
+GO
+
+-- ============================================
+-- 4. TABEL TRANSAKSI
+-- ============================================
+CREATE TABLE Transaksi (
+    id_transaksi INT PRIMARY KEY,
+    tanggal DATE NOT NULL,
+    id_gerobak INT NOT NULL,
+    CONSTRAINT FK_Transaksi_Gerobak FOREIGN KEY (id_gerobak) 
+        REFERENCES Gerobak(id_gerobak)
+);
+GO
+
+-- ============================================
+-- 5. TABEL DETAIL PEMBAYARAN
+-- ============================================
+CREATE TABLE DetailPembayaran (
+    id_detail INT PRIMARY KEY,
+    id_transaksi INT NOT NULL,
+    id_produk INT NOT NULL,
+    jumlah INT NOT NULL,
+    metode_pembayaran NVARCHAR(10) NOT NULL,
+    total_harga INT NOT NULL,
+    CONSTRAINT FK_Detail_Transaksi FOREIGN KEY (id_transaksi) 
+        REFERENCES Transaksi(id_transaksi),
+    CONSTRAINT FK_Detail_Produk FOREIGN KEY (id_produk) 
+        REFERENCES Produk(id_produk),
+    CONSTRAINT CK_MetodePembayaran CHECK (metode_pembayaran IN ('Cash', 'QRIS'))
+);
+GO
+
+-- ============================================
+-- INSERT DATA PRODUK (10 Produk Tetap)
+-- ============================================
+INSERT INTO Produk (id_produk, nama_produk, kategori, harga) VALUES
+(1,  'Butterscotch Latte',       'Ice Coffee',  11000),
+(2,  'Caramel Latte',            'Ice Coffee',  11000),
+(3,  'Vanilla Latte',            'Ice Coffee',  11000),
+(4,  'Hazelnut Latte',           'Ice Coffee',  11000),
+(5,  'Es Kopi Susu Gula Aren',   'Ice Coffee',  10000),
+(6,  'Es Americano',             'Ice Coffee',   9000),
+(7,  'Es Coklat',                'Non Coffee',  10000),
+(8,  'Matcha Latte',             'Non Coffee',  11000),
+(9,  'Thai Tea',                 'Non Coffee',   9000),
+(10, 'Lemon Tea',                'Non Coffee',   8000);
+GO
+
+-- ============================================
+-- INSERT DATA PENJUAL (68 Penjual)
+-- Nama-nama realistis Indonesia
+-- ============================================
+DECLARE @i INT = 1;
+DECLARE @nama_depan TABLE (id INT, nama NVARCHAR(50));
+INSERT INTO @nama_depan VALUES
+(1,'Ahmad'),(2,'Budi'),(3,'Cahyo'),(4,'Dedi'),(5,'Eko'),
+(6,'Fajar'),(7,'Gunawan'),(8,'Hadi'),(9,'Irwan'),(10,'Joko'),
+(11,'Kurniawan'),(12,'Lukman'),(13,'Mulyadi'),(14,'Nanda'),(15,'Oki'),
+(16,'Prasetyo'),(17,'Qomar'),(18,'Rizki'),(19,'Surya'),(20,'Taufik'),
+(21,'Umar'),(22,'Vino'),(23,'Wahyu'),(24,'Yanto'),(25,'Zainal'),
+(26,'Agus'),(27,'Bambang'),(28,'Candra'),(29,'Dimas'),(30,'Endang'),
+(31,'Feri'),(32,'Gilang'),(33,'Hendra'),(34,'Imam'),(35,'Joni'),
+(36,'Krisna'),(37,'Lutfi'),(38,'Maman'),(39,'Naufal'),(40,'Oscar'),
+(41,'Putra'),(42,'Rafi'),(43,'Slamet'),(44,'Teguh'),(45,'Ujang'),
+(46,'Veri'),(47,'Wawan'),(48,'Yudi'),(49,'Zaki'),(50,'Arif'),
+(51,'Bagas'),(52,'Chandra'),(53,'Dwi'),(54,'Erwin'),(55,'Firman'),
+(56,'Galih'),(57,'Hasan'),(58,'Ilham'),(59,'Jefri'),(60,'Khoirul'),
+(61,'Luthfi'),(62,'Mahendra'),(63,'Nur'),(64,'Okta'),(65,'Pandu'),
+(66,'Rendi'),(67,'Sigit'),(68,'Tri');
+
+DECLARE @nama_belakang TABLE (id INT, nama NVARCHAR(50));
+INSERT INTO @nama_belakang VALUES
+(1,'Hidayat'),(2,'Saputra'),(3,'Pratama'),(4,'Nugroho'),(5,'Santoso'),
+(6,'Wijaya'),(7,'Setiawan'),(8,'Kusuma'),(9,'Ramadhan'),(10,'Firmansyah'),
+(11,'Hakim'),(12,'Maulana'),(13,'Syahputra'),(14,'Wibowo'),(15,'Suryadi'),
+(16,'Permana'),(17,'Anggara'),(18,'Fadillah');
+
+SET @i = 1;
+WHILE @i <= 68
+BEGIN
+    DECLARE @namaDepan NVARCHAR(50);
+    DECLARE @namaBelakang NVARCHAR(50);
+    
+    SELECT @namaDepan = nama FROM @nama_depan WHERE id = @i;
+    
+    -- Pilih nama belakang random berdasarkan CHECKSUM + NEWID
+    SELECT TOP 1 @namaBelakang = nama 
+    FROM @nama_belakang 
+    ORDER BY ABS(CHECKSUM(NEWID())) % 18;
+    
+    INSERT INTO Penjual (id_penjual, nama_penjual)
+    VALUES (@i, @namaDepan + ' ' + @namaBelakang);
+    
+    SET @i = @i + 1;
+END
+GO
+
+-- ============================================
+-- INSERT DATA GEROBAK (68 Gerobak, 1 per Penjual)
+-- ============================================
+DECLARE @g INT = 1;
+WHILE @g <= 68
+BEGIN
+    INSERT INTO Gerobak (id_gerobak, id_penjual)
+    VALUES (@g, @g);
+    
+    SET @g = @g + 1;
+END
+GO
+
+-- ============================================
+-- INSERT DATA TRANSAKSI (800 Transaksi)
+-- Tanggal random di tahun 2025 (1 Jan - 31 Des)
+-- ============================================
+DECLARE @t INT = 1;
+DECLARE @tanggalRandom DATE;
+DECLARE @gerobakRandom INT;
+
+WHILE @t <= 800
+BEGIN
+    -- Random tanggal: 1 Jan 2025 + random 0-364 hari
+    SET @tanggalRandom = DATEADD(DAY, ABS(CHECKSUM(NEWID())) % 365, '2025-01-01');
+    
+    -- Random gerobak: 1-68
+    SET @gerobakRandom = (ABS(CHECKSUM(NEWID())) % 68) + 1;
+    
+    INSERT INTO Transaksi (id_transaksi, tanggal, id_gerobak)
+    VALUES (@t, @tanggalRandom, @gerobakRandom);
+    
+    SET @t = @t + 1;
+END
+GO
+
+-- ============================================
+-- INSERT DATA DETAIL PEMBAYARAN (800 Detail)
+-- Distribusi realistis: Es Kopi Susu Gula Aren paling sering
+-- ============================================
+DECLARE @d INT = 1;
+DECLARE @produkRandom INT;
+DECLARE @jumlahRandom INT;
+DECLARE @metodeRandom NVARCHAR(10);
+DECLARE @hargaProduk INT;
+DECLARE @randomVal INT;
+
+WHILE @d <= 800
+BEGIN
+    -- Distribusi produk realistis:
+    -- Es Kopi Susu Gula Aren (id=5) mendapat bobot lebih tinggi (~20%)
+    -- Produk latte (id=1-4) masing-masing ~10%
+    -- Sisanya ~40% dibagi rata
+    SET @randomVal = ABS(CHECKSUM(NEWID())) % 100;
+    
+    IF @randomVal < 20
+        SET @produkRandom = 5;  -- Es Kopi Susu Gula Aren (20%)
+    ELSE IF @randomVal < 30
+        SET @produkRandom = 1;  -- Butterscotch Latte (10%)
+    ELSE IF @randomVal < 40
+        SET @produkRandom = 2;  -- Caramel Latte (10%)
+    ELSE IF @randomVal < 50
+        SET @produkRandom = 3;  -- Vanilla Latte (10%)
+    ELSE IF @randomVal < 58
+        SET @produkRandom = 4;  -- Hazelnut Latte (8%)
+    ELSE IF @randomVal < 66
+        SET @produkRandom = 6;  -- Es Americano (8%)
+    ELSE IF @randomVal < 74
+        SET @produkRandom = 7;  -- Es Coklat (8%)
+    ELSE IF @randomVal < 82
+        SET @produkRandom = 8;  -- Matcha Latte (8%)
+    ELSE IF @randomVal < 91
+        SET @produkRandom = 9;  -- Thai Tea (9%)
+    ELSE
+        SET @produkRandom = 10; -- Lemon Tea (9%)
+    
+    -- Random jumlah: 1-3
+    SET @jumlahRandom = (ABS(CHECKSUM(NEWID())) % 3) + 1;
+    
+    -- Random metode pembayaran: Cash (60%) atau QRIS (40%)
+    IF (ABS(CHECKSUM(NEWID())) % 100) < 60
+        SET @metodeRandom = 'Cash';
+    ELSE
+        SET @metodeRandom = 'QRIS';
+    
+    -- Ambil harga produk
+    SELECT @hargaProduk = harga FROM Produk WHERE id_produk = @produkRandom;
+    
+    INSERT INTO DetailPembayaran (id_detail, id_transaksi, id_produk, jumlah, metode_pembayaran, total_harga)
+    VALUES (@d, @d, @produkRandom, @jumlahRandom, @metodeRandom, @jumlahRandom * @hargaProduk);
+    
+    SET @d = @d + 1;
+END
+GO
+
+-- ============================================
+-- BUAT INDEX UNTUK PERFORMA QUERY
+-- ============================================
+CREATE INDEX IX_Gerobak_Penjual ON Gerobak(id_penjual);
+CREATE INDEX IX_Transaksi_Gerobak ON Transaksi(id_gerobak);
+CREATE INDEX IX_Transaksi_Tanggal ON Transaksi(tanggal);
+CREATE INDEX IX_Detail_Transaksi ON DetailPembayaran(id_transaksi);
+CREATE INDEX IX_Detail_Produk ON DetailPembayaran(id_produk);
+CREATE INDEX IX_Detail_Metode ON DetailPembayaran(metode_pembayaran);
+GO
+
+-- ============================================
+-- VERIFIKASI DATA
+-- ============================================
+PRINT '========================================';
+PRINT 'VERIFIKASI DATA UMKM KOPI KELILING';
+PRINT '========================================';
+
+SELECT 'Jumlah Penjual' AS Keterangan, COUNT(*) AS Total FROM Penjual;
+SELECT 'Jumlah Gerobak' AS Keterangan, COUNT(*) AS Total FROM Gerobak;
+SELECT 'Jumlah Produk' AS Keterangan, COUNT(*) AS Total FROM Produk;
+SELECT 'Jumlah Transaksi' AS Keterangan, COUNT(*) AS Total FROM Transaksi;
+SELECT 'Jumlah Detail Pembayaran' AS Keterangan, COUNT(*) AS Total FROM DetailPembayaran;
+
+PRINT '';
+PRINT '--- Sample Data Penjual (10 pertama) ---';
+SELECT TOP 10 * FROM Penjual ORDER BY id_penjual;
+
+PRINT '';
+PRINT '--- Daftar Produk ---';
+SELECT * FROM Produk ORDER BY id_produk;
+
+PRINT '';
+PRINT '--- Sample Transaksi (10 pertama) ---';
+SELECT TOP 10 
+    t.id_transaksi,
+    t.tanggal,
+    p.nama_penjual,
+    g.id_gerobak
+FROM Transaksi t
+JOIN Gerobak g ON t.id_gerobak = g.id_gerobak
+JOIN Penjual p ON g.id_penjual = p.id_penjual
+ORDER BY t.id_transaksi;
+
+PRINT '';
+PRINT '--- Sample Detail Pembayaran (10 pertama) ---';
+SELECT TOP 10
+    dp.id_detail,
+    dp.id_transaksi,
+    pr.nama_produk,
+    dp.jumlah,
+    dp.metode_pembayaran,
+    dp.total_harga
+FROM DetailPembayaran dp
+JOIN Produk pr ON dp.id_produk = pr.id_produk
+ORDER BY dp.id_detail;
+
+-- ============================================
+-- QUERY ANALISIS BISNIS
+-- ============================================
+PRINT '';
+PRINT '========================================';
+PRINT 'ANALISIS BISNIS';
+PRINT '========================================';
+
+-- Produk Terlaris
+PRINT '--- Produk Terlaris ---';
+SELECT 
+    pr.nama_produk,
+    pr.kategori,
+    COUNT(*) AS jumlah_terjual,
+    SUM(dp.jumlah) AS total_cup,
+    SUM(dp.total_harga) AS total_pendapatan
+FROM DetailPembayaran dp
+JOIN Produk pr ON dp.id_produk = pr.id_produk
+GROUP BY pr.nama_produk, pr.kategori
+ORDER BY total_cup DESC;
+
+-- Pendapatan per Bulan
+PRINT '';
+PRINT '--- Pendapatan per Bulan 2025 ---';
+SELECT 
+    MONTH(t.tanggal) AS bulan,
+    COUNT(DISTINCT t.id_transaksi) AS jumlah_transaksi,
+    SUM(dp.total_harga) AS total_pendapatan
+FROM Transaksi t
+JOIN DetailPembayaran dp ON t.id_transaksi = dp.id_transaksi
+GROUP BY MONTH(t.tanggal)
+ORDER BY bulan;
+
+-- Metode Pembayaran
+PRINT '';
+PRINT '--- Distribusi Metode Pembayaran ---';
+SELECT 
+    metode_pembayaran,
+    COUNT(*) AS jumlah_transaksi,
+    SUM(total_harga) AS total_pendapatan,
+    CAST(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM DetailPembayaran) AS DECIMAL(5,2)) AS persentase
+FROM DetailPembayaran
+GROUP BY metode_pembayaran;
+
+-- Top 10 Penjual dengan Pendapatan Tertinggi
+PRINT '';
+PRINT '--- Top 10 Penjual Terbaik ---';
+SELECT TOP 10
+    p.nama_penjual,
+    COUNT(DISTINCT t.id_transaksi) AS jumlah_transaksi,
+    SUM(dp.total_harga) AS total_pendapatan
+FROM Penjual p
+JOIN Gerobak g ON p.id_penjual = g.id_penjual
+JOIN Transaksi t ON g.id_gerobak = t.id_gerobak
+JOIN DetailPembayaran dp ON t.id_transaksi = dp.id_transaksi
+GROUP BY p.nama_penjual
+ORDER BY total_pendapatan DESC;
+
+-- Perbandingan Kategori
+PRINT '';
+PRINT '--- Ice Coffee vs Non Coffee ---';
+SELECT 
+    pr.kategori,
+    COUNT(*) AS jumlah_order,
+    SUM(dp.jumlah) AS total_cup,
+    SUM(dp.total_harga) AS total_pendapatan
+FROM DetailPembayaran dp
+JOIN Produk pr ON dp.id_produk = pr.id_produk
+GROUP BY pr.kategori;
+
+PRINT '';
+PRINT '========================================';
+PRINT 'SCRIPT SELESAI DIJALANKAN!';
+PRINT '========================================';
+GO
