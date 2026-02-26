@@ -1,0 +1,19 @@
+-- ============================================
+-- 07. INDEX UNTUK PERFORMA QUERY
+-- UMKM Kopi Keliling - SQL Server 2008+
+-- ============================================
+
+USE UMKM_KopiKeliling;
+GO
+
+-- Index pada Foreign Key dan kolom yang sering di-query
+CREATE INDEX IX_Gerobak_Penjual ON Gerobak(id_penjual);
+CREATE INDEX IX_Transaksi_Gerobak ON Transaksi(id_gerobak);
+CREATE INDEX IX_Transaksi_Tanggal ON Transaksi(tanggal);
+CREATE INDEX IX_Detail_Transaksi ON DetailPembayaran(id_transaksi);
+CREATE INDEX IX_Detail_Produk ON DetailPembayaran(id_produk);
+CREATE INDEX IX_Detail_Metode ON DetailPembayaran(metode_pembayaran);
+GO
+
+PRINT 'Index berhasil dibuat!';
+GO
