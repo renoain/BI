@@ -1,0 +1,38 @@
+-- ============================================
+-- 04. TABEL PRODUK
+-- UMKM Kopi Keliling - SQL Server 2008+
+-- ============================================
+
+USE UMKM_KopiKeliling;
+GO
+
+-- Buat Tabel Produk
+CREATE TABLE Produk (
+    id_produk INT PRIMARY KEY,
+    nama_produk NVARCHAR(100) NOT NULL,
+    kategori NVARCHAR(50) NOT NULL,
+    harga INT NOT NULL
+);
+GO
+
+-- Insert 10 Produk
+INSERT INTO Produk (id_produk, nama_produk, kategori, harga) VALUES
+(1,  'Butterscotch Latte',       'Ice Coffee',  11000),
+(2,  'Caramel Latte',            'Ice Coffee',  11000),
+(3,  'Vanilla Latte',            'Ice Coffee',  11000),
+(4,  'Hazelnut Latte',           'Ice Coffee',  11000),
+(5,  'Es Kopi Susu Gula Aren',   'Ice Coffee',  10000),
+(6,  'Es Americano',             'Ice Coffee',   9000),
+(7,  'Es Coklat',                'Non Coffee',  10000),
+(8,  'Matcha Latte',             'Non Coffee',  11000),
+(9,  'Thai Tea',                 'Non Coffee',   9000),
+(10, 'Lemon Tea',                'Non Coffee',   8000);
+GO
+
+-- Verifikasi
+SELECT 'Jumlah Produk' AS Keterangan, COUNT(*) AS Total FROM Produk;
+SELECT * FROM Produk ORDER BY id_produk;
+GO
+
+PRINT 'Tabel Produk berhasil dibuat dan diisi 10 data!';
+GO
