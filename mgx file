@@ -1,0 +1,25 @@
+-- ============================================
+-- 01. BUAT DATABASE
+-- UMKM Kopi Keliling - SQL Server 2008+
+-- Jalankan file ini PERTAMA
+-- ============================================
+
+IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'UMKM_KopiKeliling')
+BEGIN
+    CREATE DATABASE UMKM_KopiKeliling;
+END
+GO
+
+USE UMKM_KopiKeliling;
+GO
+
+-- Drop tabel jika sudah ada (urutan sesuai dependensi)
+IF OBJECT_ID('DetailPembayaran', 'U') IS NOT NULL DROP TABLE DetailPembayaran;
+IF OBJECT_ID('Transaksi', 'U') IS NOT NULL DROP TABLE Transaksi;
+IF OBJECT_ID('Produk', 'U') IS NOT NULL DROP TABLE Produk;
+IF OBJECT_ID('Gerobak', 'U') IS NOT NULL DROP TABLE Gerobak;
+IF OBJECT_ID('Penjual', 'U') IS NOT NULL DROP TABLE Penjual;
+GO
+
+PRINT 'Database UMKM_KopiKeliling berhasil dibuat/disiapkan!';
+GO
