@@ -1,0 +1,315 @@
+-- ============================================
+-- DUMMY DATA SQL SERVER - KOPI KELILING
+-- Total detail_transaksi: 800 data
+-- ============================================
+
+-- Drop tables if exist (in reverse dependency order)
+IF OBJECT_ID('detail_transaksi', 'U') IS NOT NULL DROP TABLE detail_transaksi;
+IF OBJECT_ID('transaksi', 'U') IS NOT NULL DROP TABLE transaksi;
+IF OBJECT_ID('metode_pembayaran', 'U') IS NOT NULL DROP TABLE metode_pembayaran;
+IF OBJECT_ID('produk', 'U') IS NOT NULL DROP TABLE produk;
+IF OBJECT_ID('gerobak', 'U') IS NOT NULL DROP TABLE gerobak;
+GO
+
+-- ============================================
+-- 1. TABEL GEROBAK (20 data)
+-- ============================================
+CREATE TABLE gerobak (
+    id_gerobak INT PRIMARY KEY IDENTITY(1,1),
+    nama_penjual NVARCHAR(100) NOT NULL
+);
+GO
+
+INSERT INTO gerobak (nama_penjual) VALUES
+(N'Ahmad Sudrajat'),
+(N'Budi Santoso'),
+(N'Candra Wijaya'),
+(N'Dedi Kurniawan'),
+(N'Eko Prasetyo'),
+(N'Fajar Hidayat'),
+(N'Gunawan Setiawan'),
+(N'Hendra Saputra'),
+(N'Irfan Maulana'),
+(N'Joko Susilo'),
+(N'Karman Sugiarto'),
+(N'Lukman Hakim'),
+(N'Mulyadi Rahman'),
+(N'Nanda Permana'),
+(N'Oscar Firmansyah'),
+(N'Purnomo Adi'),
+(N'Qomar Zulfikar'),
+(N'Ridwan Kamil'),
+(N'Slamet Riyadi'),
+(N'Taufik Ismail');
+GO
+
+-- ============================================
+-- 2. TABEL PRODUK (25 data)
+-- ============================================
+CREATE TABLE produk (
+    id_produk INT PRIMARY KEY IDENTITY(1,1),
+    nama_produk NVARCHAR(100) NOT NULL,
+    kategori NVARCHAR(50) NOT NULL,
+    harga DECIMAL(10,2) NOT NULL
+);
+GO
+
+INSERT INTO produk (nama_produk, kategori, harga) VALUES
+-- Kopi (10 produk)
+(N'Kopi Hitam', N'Kopi', 5000),
+(N'Kopi Susu', N'Kopi', 8000),
+(N'Kopi Gula Aren', N'Kopi', 10000),
+(N'Kopi Tubruk', N'Kopi', 5000),
+(N'Kopi Jahe', N'Kopi', 7000),
+(N'Es Kopi Susu', N'Kopi', 12000),
+(N'Es Kopi Gula Aren', N'Kopi', 13000),
+(N'Kopi Mocca', N'Kopi', 12000),
+(N'Kopi Caramel', N'Kopi', 13000),
+(N'Kopi Vanilla', N'Kopi', 12000),
+-- Non-Kopi (8 produk)
+(N'Teh Manis', N'Non-Kopi', 4000),
+(N'Teh Tarik', N'Non-Kopi', 8000),
+(N'Es Teh Manis', N'Non-Kopi', 5000),
+(N'Coklat Panas', N'Non-Kopi', 10000),
+(N'Es Coklat', N'Non-Kopi', 12000),
+(N'Susu Jahe', N'Non-Kopi', 8000),
+(N'Wedang Uwuh', N'Non-Kopi', 7000),
+(N'Es Jeruk', N'Non-Kopi', 6000),
+-- Makanan (7 produk)
+(N'Roti Bakar Coklat', N'Makanan', 8000),
+(N'Roti Bakar Keju', N'Makanan', 10000),
+(N'Pisang Goreng', N'Makanan', 5000),
+(N'Singkong Goreng', N'Makanan', 5000),
+(N'Gorengan Campur', N'Makanan', 6000),
+(N'Kentang Goreng', N'Makanan', 10000),
+(N'Cireng Isi', N'Makanan', 7000);
+GO
+
+-- ============================================
+-- 3. TABEL METODE PEMBAYARAN (2 data)
+-- ============================================
+CREATE TABLE metode_pembayaran (
+    id_metode INT PRIMARY KEY IDENTITY(1,1),
+    metode NVARCHAR(20) NOT NULL
+);
+GO
+
+INSERT INTO metode_pembayaran (metode) VALUES
+(N'Cash'),
+(N'QRIS');
+GO
+
+-- ============================================
+-- 4. TABEL TRANSAKSI (400 data)
+-- Periode: Januari 2025 - Februari 2026
+-- ============================================
+CREATE TABLE transaksi (
+    id_transaksi INT PRIMARY KEY IDENTITY(1,1),
+    tanggal DATE NOT NULL,
+    id_gerobak INT NOT NULL,
+    id_metode INT NOT NULL,
+    FOREIGN KEY (id_gerobak) REFERENCES gerobak(id_gerobak),
+    FOREIGN KEY (id_metode) REFERENCES metode_pembayaran(id_metode)
+);
+GO
+
+DECLARE @i INT = 1;
+DECLARE @tanggal DATE;
+DECLARE @id_gerobak INT;
+DECLARE @id_metode INT;
+DECLARE @start_date DATE = '2025-01-01';
+DECLARE @end_date DATE = '2026-02-26';
+DECLARE @date_range INT = DATEDIFF(DAY, @start_date, @end_date);
+
+WHILE @i <= 400
+BEGIN
+    SET @tanggal = DATEADD(DAY, ABS(CHECKSUM(NEWID())) % (@date_range + 1), @start_date);
+    SET @id_gerobak = (ABS(CHECKSUM(NEWID())) % 20) + 1;
+    SET @id_metode = CASE WHEN ABS(CHECKSUM(NEWID())) % 10 < 6 THEN 1 ELSE 2 END;
+
+    INSERT INTO transaksi (tanggal, id_gerobak, id_metode)
+    VALUES (@tanggal, @id_gerobak, @id_metode);
+
+    SET @i = @i + 1;
+END
+GO
+
+-- ============================================
+-- 5. TABEL DETAIL TRANSAKSI (800 data)
+-- Setiap transaksi punya 2 item produk (400 x 2 = 800)
+-- ============================================
+CREATE TABLE detail_transaksi (
+    id_detail INT PRIMARY KEY IDENTITY(1,1),
+    id_transaksi INT NOT NULL,
+    id_produk INT NOT NULL,
+    jumlah INT NOT NULL,
+    total_harga DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (id_transaksi) REFERENCES transaksi(id_transaksi),
+    FOREIGN KEY (id_produk) REFERENCES produk(id_produk)
+);
+GO
+
+DECLARE @dt_transaksi INT = 1;
+DECLARE @dt_item INT;
+DECLARE @dt_id_produk INT;
+DECLARE @dt_id_produk2 INT;
+DECLARE @dt_jumlah INT;
+DECLARE @dt_harga DECIMAL(10,2);
+DECLARE @dt_total INT = 0;
+
+-- Setiap transaksi mendapat tepat 2 detail item = 400 x 2 = 800
+WHILE @dt_transaksi <= 400
+BEGIN
+    -- Item 1
+    SET @dt_id_produk = (ABS(CHECKSUM(NEWID())) % 25) + 1;
+    SET @dt_jumlah = (ABS(CHECKSUM(NEWID())) % 4) + 1;
+    SELECT @dt_harga = harga FROM produk WHERE id_produk = @dt_id_produk;
+
+    INSERT INTO detail_transaksi (id_transaksi, id_produk, jumlah, total_harga)
+    VALUES (@dt_transaksi, @dt_id_produk, @dt_jumlah, @dt_jumlah * @dt_harga);
+
+    -- Item 2 (pastikan produk berbeda dari item 1)
+    SET @dt_id_produk2 = (ABS(CHECKSUM(NEWID())) % 25) + 1;
+    -- Jika sama, geser 1
+    IF @dt_id_produk2 = @dt_id_produk
+        SET @dt_id_produk2 = (@dt_id_produk2 % 25) + 1;
+
+    SET @dt_jumlah = (ABS(CHECKSUM(NEWID())) % 3) + 1;
+    SELECT @dt_harga = harga FROM produk WHERE id_produk = @dt_id_produk2;
+
+    INSERT INTO detail_transaksi (id_transaksi, id_produk, jumlah, total_harga)
+    VALUES (@dt_transaksi, @dt_id_produk2, @dt_jumlah, @dt_jumlah * @dt_harga);
+
+    SET @dt_transaksi = @dt_transaksi + 1;
+END
+GO
+
+-- ============================================
+-- 6. VERIFIKASI JUMLAH DATA
+-- ============================================
+PRINT '==========================================';
+PRINT '  VERIFIKASI DATA KOPI KELILING';
+PRINT '==========================================';
+
+SELECT 'gerobak' AS tabel, COUNT(*) AS jumlah_data FROM gerobak
+UNION ALL
+SELECT 'produk', COUNT(*) FROM produk
+UNION ALL
+SELECT 'metode_pembayaran', COUNT(*) FROM metode_pembayaran
+UNION ALL
+SELECT 'transaksi', COUNT(*) FROM transaksi
+UNION ALL
+SELECT 'detail_transaksi', COUNT(*) FROM detail_transaksi;
+
+-- Verifikasi detail_transaksi = 800
+SELECT COUNT(*) AS total_detail_transaksi FROM detail_transaksi;
+
+-- Total semua tabel
+SELECT 
+    (SELECT COUNT(*) FROM gerobak) +
+    (SELECT COUNT(*) FROM produk) +
+    (SELECT COUNT(*) FROM metode_pembayaran) +
+    (SELECT COUNT(*) FROM transaksi) +
+    (SELECT COUNT(*) FROM detail_transaksi) AS grand_total_semua_tabel;
+GO
+
+-- ============================================
+-- 7. SAMPLE QUERIES
+-- ============================================
+
+-- a. 10 Transaksi terakhir dengan detail lengkap
+SELECT TOP 10
+    t.id_transaksi,
+    t.tanggal,
+    g.nama_penjual,
+    mp.metode,
+    p.nama_produk,
+    p.kategori,
+    p.harga AS harga_satuan,
+    dt.jumlah,
+    dt.total_harga
+FROM transaksi t
+JOIN gerobak g ON t.id_gerobak = g.id_gerobak
+JOIN metode_pembayaran mp ON t.id_metode = mp.id_metode
+JOIN detail_transaksi dt ON t.id_transaksi = dt.id_transaksi
+JOIN produk p ON dt.id_produk = p.id_produk
+ORDER BY t.tanggal DESC, t.id_transaksi DESC;
+GO
+
+-- b. Total pendapatan per gerobak/penjual
+SELECT 
+    g.id_gerobak,
+    g.nama_penjual,
+    COUNT(DISTINCT t.id_transaksi) AS total_transaksi,
+    SUM(dt.jumlah) AS total_item_terjual,
+    SUM(dt.total_harga) AS total_pendapatan
+FROM gerobak g
+JOIN transaksi t ON g.id_gerobak = t.id_gerobak
+JOIN detail_transaksi dt ON t.id_transaksi = dt.id_transaksi
+GROUP BY g.id_gerobak, g.nama_penjual
+ORDER BY total_pendapatan DESC;
+GO
+
+-- c. Produk terlaris (Top 10)
+SELECT TOP 10
+    p.id_produk,
+    p.nama_produk,
+    p.kategori,
+    p.harga AS harga_satuan,
+    SUM(dt.jumlah) AS total_qty_terjual,
+    SUM(dt.total_harga) AS total_pendapatan
+FROM produk p
+JOIN detail_transaksi dt ON p.id_produk = dt.id_produk
+GROUP BY p.id_produk, p.nama_produk, p.kategori, p.harga
+ORDER BY total_qty_terjual DESC;
+GO
+
+-- d. Perbandingan Cash vs QRIS
+SELECT 
+    mp.metode,
+    COUNT(DISTINCT t.id_transaksi) AS jumlah_transaksi,
+    SUM(dt.jumlah) AS total_item,
+    SUM(dt.total_harga) AS total_nilai_transaksi
+FROM metode_pembayaran mp
+JOIN transaksi t ON mp.id_metode = t.id_metode
+JOIN detail_transaksi dt ON t.id_transaksi = dt.id_transaksi
+GROUP BY mp.metode;
+GO
+
+-- e. Penjualan per bulan
+SELECT 
+    FORMAT(t.tanggal, 'yyyy-MM') AS bulan,
+    COUNT(DISTINCT t.id_transaksi) AS jumlah_transaksi,
+    SUM(dt.jumlah) AS total_item,
+    SUM(dt.total_harga) AS total_pendapatan
+FROM transaksi t
+JOIN detail_transaksi dt ON t.id_transaksi = dt.id_transaksi
+GROUP BY FORMAT(t.tanggal, 'yyyy-MM')
+ORDER BY bulan;
+GO
+
+-- f. Pendapatan per kategori produk
+SELECT 
+    p.kategori,
+    COUNT(dt.id_detail) AS jumlah_detail,
+    SUM(dt.jumlah) AS total_item_terjual,
+    SUM(dt.total_harga) AS total_pendapatan,
+    CAST(ROUND(SUM(dt.total_harga) * 100.0 / 
+        (SELECT SUM(total_harga) FROM detail_transaksi), 2) AS DECIMAL(5,2)) AS persentase
+FROM produk p
+JOIN detail_transaksi dt ON p.id_produk = dt.id_produk
+GROUP BY p.kategori
+ORDER BY total_pendapatan DESC;
+GO
+
+-- g. Rata-rata transaksi per hari
+SELECT 
+    DATENAME(WEEKDAY, t.tanggal) AS hari,
+    COUNT(DISTINCT t.id_transaksi) AS jumlah_transaksi,
+    SUM(dt.total_harga) AS total_pendapatan,
+    CAST(AVG(dt.total_harga) AS DECIMAL(10,2)) AS rata_rata_per_item
+FROM transaksi t
+JOIN detail_transaksi dt ON t.id_transaksi = dt.id_transaksi
+GROUP BY DATENAME(WEEKDAY, t.tanggal), DATEPART(WEEKDAY, t.tanggal)
+ORDER BY DATEPART(WEEKDAY, t.tanggal);
+GO
