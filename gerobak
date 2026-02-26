@@ -1,0 +1,41 @@
+-- ============================================
+-- 03. TABEL GEROBAK
+-- UMKM Kopi Keliling - SQL Server 2008+
+-- ============================================
+
+USE UMKM_KopiKeliling;
+GO
+
+-- Buat Tabel Gerobak
+CREATE TABLE Gerobak (
+    id_gerobak INT PRIMARY KEY,
+    id_penjual INT NOT NULL,
+    CONSTRAINT FK_Gerobak_Penjual FOREIGN KEY (id_penjual) 
+        REFERENCES Penjual(id_penjual)
+);
+GO
+
+-- Insert 68 Gerobak (1 gerobak per penjual)
+DECLARE @g INT = 1;
+WHILE @g <= 68
+BEGIN
+    INSERT INTO Gerobak (id_gerobak, id_penjual)
+    VALUES (@g, @g);
+    
+    SET @g = @g + 1;
+END
+GO
+
+-- Verifikasi
+SELECT 'Jumlah Gerobak' AS Keterangan, COUNT(*) AS Total FROM Gerobak;
+SELECT TOP 10 
+    g.id_gerobak, 
+    g.id_penjual, 
+    p.nama_penjual 
+FROM Gerobak g
+JOIN Penjual p ON g.id_penjual = p.id_penjual
+ORDER BY g.id_gerobak;
+GO
+
+PRINT 'Tabel Gerobak berhasil dibuat dan diisi 68 data!';
+GO
