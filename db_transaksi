@@ -1,0 +1,63 @@
+-- ============================================
+-- 05. TABEL TRANSAKSI
+-- UMKM Kopi Keliling - SQL Server 2008+
+-- ============================================
+
+USE UMKM_KopiKeliling;
+GO
+
+-- Buat Tabel Transaksi
+CREATE TABLE Transaksi (
+    id_transaksi INT PRIMARY KEY,
+    tanggal DATE NOT NULL,
+    id_gerobak INT NOT NULL,
+    CONSTRAINT FK_Transaksi_Gerobak FOREIGN KEY (id_gerobak) 
+        REFERENCES Gerobak(id_gerobak)
+);
+GO
+
+-- Insert 800 Transaksi dengan tanggal random di tahun 2025
+DECLARE @t INT = 1;
+DECLARE @tanggalRandom DATE;
+DECLARE @gerobakRandom INT;
+
+WHILE @t <= 800
+BEGIN
+    -- Random tanggal: 1 Jan 2025 + random 0-364 hari
+    SET @tanggalRandom = DATEADD(DAY, ABS(CHECKSUM(NEWID())) % 365, '2025-01-01');
+    
+    -- Random gerobak: 1-68
+    SET @gerobakRandom = (ABS(CHECKSUM(NEWID())) % 68) + 1;
+    
+    INSERT INTO Transaksi (id_transaksi, tanggal, id_gerobak)
+    VALUES (@t, @tanggalRandom, @gerobakRandom);
+    
+    SET @t = @t + 1;
+END
+GO
+
+-- Verifikasi
+SELECT 'Jumlah Transaksi' AS Keterangan, COUNT(*) AS Total FROM Transaksi;
+
+SELECT TOP 10 
+    t.id_transaksi,
+    t.tanggal,
+    t.id_gerobak,
+    p.nama_penjual
+FROM Transaksi t
+JOIN Gerobak g ON t.id_gerobak = g.id_gerobak
+JOIN Penjual p ON g.id_penjual = p.id_penjual
+ORDER BY t.id_transaksi;
+GO
+
+-- Distribusi per bulan
+SELECT 
+    MONTH(tanggal) AS bulan,
+    COUNT(*) AS jumlah_transaksi
+FROM Transaksi
+GROUP BY MONTH(tanggal)
+ORDER BY bulan;
+GO
+
+PRINT 'Tabel Transaksi berhasil dibuat dan diisi 800 data!';
+GO
