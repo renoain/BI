@@ -1,0 +1,119 @@
+-- ============================================
+-- 06. TABEL DETAIL PEMBAYARAN
+-- UMKM Kopi Keliling - SQL Server 2008+
+-- ============================================
+
+USE UMKM_KopiKeliling;
+GO
+
+-- Buat Tabel DetailPembayaran
+CREATE TABLE DetailPembayaran (
+    id_detail INT PRIMARY KEY,
+    id_transaksi INT NOT NULL,
+    id_produk INT NOT NULL,
+    jumlah INT NOT NULL,
+    metode_pembayaran NVARCHAR(10) NOT NULL,
+    total_harga INT NOT NULL,
+    CONSTRAINT FK_Detail_Transaksi FOREIGN KEY (id_transaksi) 
+        REFERENCES Transaksi(id_transaksi),
+    CONSTRAINT FK_Detail_Produk FOREIGN KEY (id_produk) 
+        REFERENCES Produk(id_produk),
+    CONSTRAINT CK_MetodePembayaran CHECK (metode_pembayaran IN ('Cash', 'QRIS'))
+);
+GO
+
+-- Insert 800 DetailPembayaran dengan distribusi realistis
+DECLARE @d INT = 1;
+DECLARE @produkRandom INT;
+DECLARE @jumlahRandom INT;
+DECLARE @metodeRandom NVARCHAR(10);
+DECLARE @hargaProduk INT;
+DECLARE @randomVal INT;
+
+WHILE @d <= 800
+BEGIN
+    -- Distribusi produk realistis:
+    -- Es Kopi Susu Gula Aren (id=5) paling sering (~20%)
+    -- Produk latte (id=1-4) masing-masing ~10%
+    -- Sisanya ~40% dibagi rata
+    SET @randomVal = ABS(CHECKSUM(NEWID())) % 100;
+    
+    IF @randomVal < 20
+        SET @produkRandom = 5;  -- Es Kopi Susu Gula Aren (20%)
+    ELSE IF @randomVal < 30
+        SET @produkRandom = 1;  -- Butterscotch Latte (10%)
+    ELSE IF @randomVal < 40
+        SET @produkRandom = 2;  -- Caramel Latte (10%)
+    ELSE IF @randomVal < 50
+        SET @produkRandom = 3;  -- Vanilla Latte (10%)
+    ELSE IF @randomVal < 58
+        SET @produkRandom = 4;  -- Hazelnut Latte (8%)
+    ELSE IF @randomVal < 66
+        SET @produkRandom = 6;  -- Es Americano (8%)
+    ELSE IF @randomVal < 74
+        SET @produkRandom = 7;  -- Es Coklat (8%)
+    ELSE IF @randomVal < 82
+        SET @produkRandom = 8;  -- Matcha Latte (8%)
+    ELSE IF @randomVal < 91
+        SET @produkRandom = 9;  -- Thai Tea (9%)
+    ELSE
+        SET @produkRandom = 10; -- Lemon Tea (9%)
+    
+    -- Random jumlah: 1-3 cup
+    SET @jumlahRandom = (ABS(CHECKSUM(NEWID())) % 3) + 1;
+    
+    -- Random metode pembayaran: Cash (60%) atau QRIS (40%)
+    IF (ABS(CHECKSUM(NEWID())) % 100) < 60
+        SET @metodeRandom = 'Cash';
+    ELSE
+        SET @metodeRandom = 'QRIS';
+    
+    -- Ambil harga produk
+    SELECT @hargaProduk = harga FROM Produk WHERE id_produk = @produkRandom;
+    
+    -- Insert dengan total_harga otomatis
+    INSERT INTO DetailPembayaran (id_detail, id_transaksi, id_produk, jumlah, metode_pembayaran, total_harga)
+    VALUES (@d, @d, @produkRandom, @jumlahRandom, @metodeRandom, @jumlahRandom * @hargaProduk);
+    
+    SET @d = @d + 1;
+END
+GO
+
+-- Verifikasi
+SELECT 'Jumlah Detail Pembayaran' AS Keterangan, COUNT(*) AS Total FROM DetailPembayaran;
+
+SELECT TOP 10
+    dp.id_detail,
+    dp.id_transaksi,
+    pr.nama_produk,
+    pr.kategori,
+    dp.jumlah,
+    dp.metode_pembayaran,
+    dp.total_harga
+FROM DetailPembayaran dp
+JOIN Produk pr ON dp.id_produk = pr.id_produk
+ORDER BY dp.id_detail;
+GO
+
+-- Distribusi produk
+SELECT 
+    pr.nama_produk,
+    COUNT(*) AS jumlah_order,
+    SUM(dp.jumlah) AS total_cup
+FROM DetailPembayaran dp
+JOIN Produk pr ON dp.id_produk = pr.id_produk
+GROUP BY pr.nama_produk
+ORDER BY total_cup DESC;
+GO
+
+-- Distribusi metode pembayaran
+SELECT 
+    metode_pembayaran,
+    COUNT(*) AS jumlah,
+    CAST(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM DetailPembayaran) AS DECIMAL(5,2)) AS persentase
+FROM DetailPembayaran
+GROUP BY metode_pembayaran;
+GO
+
+PRINT 'Tabel DetailPembayaran berhasil dibuat dan diisi 800 data!';
+GO
